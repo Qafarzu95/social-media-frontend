@@ -22,8 +22,8 @@ jobs:
       - name: Authenticate to GCP via Workload Identity
         uses: google-github-actions/auth@v1
         with:
-          # Bu değeri tam resource adıyla güncelle
-          workload_identity_provider: projects/${{ secrets.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/frontend-pool/providers/frontend-provider
+          # Mevcut pool ve provider ile değiştirildi
+          workload_identity_provider: projects/212643517584/locations/global/workloadIdentityPools/github-actions-pool-v2/providers/github-frontend-provider
           service_account: ${{ secrets.GCP_SA_EMAIL }}
 
       - name: Build & Push Frontend Docker image
