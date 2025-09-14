@@ -22,15 +22,14 @@ jobs:
       - name: Authenticate to GCP via Workload Identity
         uses: google-github-actions/auth@v1
         with:
-          workload_identity_provider: ${{ secrets.GCP_PROVIDER_FRONTEND }}
+          # Bu değeri tam resource adıyla güncelle
+          workload_identity_provider: projects/${{ secrets.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/frontend-pool/providers/frontend-provider
           service_account: ${{ secrets.GCP_SA_EMAIL }}
 
       - name: Build & Push Frontend Docker image
         run: |
           cd frontend
           gcloud builds submit --tag gcr.io/${{ secrets.GCP_PROJECT }}/socialmedia-frontend
-          env:
-            CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE: ${{ secrets.GCP_SA_KEY }}
 
       - name: Deploy Frontend to Cloud Run
         run: |
