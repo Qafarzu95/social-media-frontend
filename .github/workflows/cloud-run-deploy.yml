@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:  # Bu satır manuel tetikleme ekler
 
 jobs:
   build-and-deploy:
