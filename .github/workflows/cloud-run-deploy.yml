@@ -1,14 +1,14 @@
 name: Deploy Frontend to Cloud Run
 
-permissions:
-  id-token: write   # OIDC için gerekli
-  contents: read    # Repo checkout için gerekli
-
 on:
   push:
     branches:
       - main
   workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   deploy-frontend:
