@@ -1,5 +1,9 @@
 name: Deploy Frontend to Cloud Run
 
+permissions:
+  id-token: write   # OIDC için gerekli
+  contents: read    # Repo checkout için gerekli
+
 on:
   push:
     branches:
@@ -7,37 +11,15 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Test Frontend GCP auth
-  test-frontend-auth:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout frontend code
-        uses: actions/checkout@v3
-        with:
-          path: frontend
-
-      - name: Authenticate to GCP (Frontend) via Workload Identity
-        uses: google-github-actions/auth@v1
-        with:
-          workload_identity_provider: ${{ secrets.GCP_PROVIDER_FRONTEND }}
-          service_account: ${{ secrets.GCP_SA_EMAIL }}
-
-      - name: Test gcloud access (Frontend)
-        run: |
-          echo "Listing GCP projects to test auth..."
-          gcloud projects list
-
-  # Deploy Frontend
   deploy-frontend:
     runs-on: ubuntu-latest
-    needs: test-frontend-auth
     steps:
       - name: Checkout frontend code
         uses: actions/checkout@v3
         with:
           path: frontend
 
-      - name: Authenticate to GCP (Frontend) via Workload Identity
+      - name: Authenticate to GCP via Workload Identity
         uses: google-github-actions/auth@v1
         with:
           workload_identity_provider: ${{ secrets.GCP_PROVIDER_FRONTEND }}
