@@ -18,23 +18,23 @@ jobs:
       - name: Authenticate to GCP via Workload Identity
         uses: google-github-actions/auth@v1
         with:
-          workload_identity_provider: "projects/212643517584/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider"
-          service_account: "github-actions-deploy@pure-highlander-471707-t2.iam.gserviceaccount.com"
+          workload_identity_provider: ${{ secrets.GCP_PROVIDER_BACKEND }}
+          service_account: ${{ secrets.GCP_SA_EMAIL }}
 
       - name: Build & Push Backend Docker image
         run: |
           cd backend
-          gcloud builds submit --tag gcr.io/pure-highlander-471707-t2/socialmedia-backend
+          gcloud builds submit --tag gcr.io/${{ secrets.GCP_PROJECT }}/socialmedia-backend
 
       - name: Deploy Backend to Cloud Run
         run: |
           gcloud run deploy socialmedia-backend \
-            --image gcr.io/pure-highlander-471707-t2/socialmedia-backend \
+            --image gcr.io/${{ secrets.GCP_PROJECT }}/socialmedia-backend \
             --platform managed \
             --region asia-east1 \
             --allow-unauthenticated \
-            --add-cloudsql-instances pure-highlander-471707-t2:asia-east1:socialmedia-instance \
-            --set-env-vars DATABASE_HOST=/cloudsql/pure-highlander-471707-t2:asia-east1:socialmedia-instance,DATABASE_USER=postgres,DATABASE_PASSWORD=654321Aa!,DATABASE_NAME=socialmedia
+            --add-cloudsql-instances ${{ secrets.GCP_PROJECT }}:asia-east1:socialmedia-instance \
+            --set-env-vars DATABASE_HOST=/cloudsql/${{ secrets.GCP_PROJECT }}:asia-east1:socialmedia-instance,DATABASE_USER=postgres,DATABASE_PASSWORD=654321Aa!,DATABASE_NAME=socialmedia
 
   deploy-frontend:
     runs-on: ubuntu-latest
@@ -48,19 +48,19 @@ jobs:
       - name: Authenticate to GCP via Workload Identity
         uses: google-github-actions/auth@v1
         with:
-          workload_identity_provider: "projects/212643517584/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider"
-          service_account: "github-actions-deploy@pure-highlander-471707-t2.iam.gserviceaccount.com"
+          workload_identity_provider: ${{ secrets.GCP_PROVIDER_FRONTEND }}
+          service_account: ${{ secrets.GCP_SA_EMAIL }}
 
       - name: Build & Push Frontend Docker image
         run: |
           cd frontend
-          gcloud builds submit --tag gcr.io/pure-highlander-471707-t2/socialmedia-frontend
+          gcloud builds submit --tag gcr.io/${{ secrets.GCP_PROJECT }}/socialmedia-frontend
 
       - name: Deploy Frontend to Cloud Run
         run: |
           gcloud run deploy socialmedia-frontend \
-            --image gcr.io/pure-highlander-471707-t2/socialmedia-frontend \
+            --image gcr.io/${{ secrets.GCP_PROJECT }}/socialmedia-frontend \
             --platform managed \
             --region asia-east1 \
             --allow-unauthenticated \
-            --set-env-vars REACT_APP_API_URL=https://socialmedia-backend-212643517584.asia-east1.run.app
+            --set-env-vars REACT_APP_API_URL=https://socialmedia-backend-${{ secrets.GCP_PROJECT }}.asia-east1.run.app
