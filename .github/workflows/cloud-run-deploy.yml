@@ -29,6 +29,8 @@ jobs:
         run: |
           cd frontend
           gcloud builds submit --tag gcr.io/${{ secrets.GCP_PROJECT }}/socialmedia-frontend
+          env:
+            CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE: ${{ secrets.GCP_SA_KEY }}
 
       - name: Deploy Frontend to Cloud Run
         run: |
