@@ -1,38 +1,62 @@
-name: Deploy Frontend to Cloud Run
+name: Deploy Frontend & Backend to Cloud Run
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:  # Bu satır manuel tetikleme ekler
+  workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  deploy-backend:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout backend code
         uses: actions/checkout@v3
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
         with:
-          project_id: pure-highlander-471707
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
-          export_default_credentials: true
+          path: backend
 
-      - name: Authenticate Docker to GCR
+      - name: Authenticate to GCP via Workload Identity
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: "projects/212643517584/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider"
+          service_account: "github-actions-deploy@pure-highlander-471707-t2.iam.gserviceaccount.com"
+
+      - name: Build & Push Backend Docker image
         run: |
-          gcloud auth configure-docker
+          cd backend
+          gcloud builds submit --tag gcr.io/pure-highlander-471707-t2/socialmedia-backend
 
-      - name: Build Docker image
+      - name: Deploy Backend to Cloud Run
         run: |
-          docker build -t gcr.io/pure-highlander-471707-t2/socialmedia-frontend .
+          gcloud run deploy socialmedia-backend \
+            --image gcr.io/pure-highlander-471707-t2/socialmedia-backend \
+            --platform managed \
+            --region asia-east1 \
+            --allow-unauthenticated \
+            --add-cloudsql-instances pure-highlander-471707-t2:asia-east1:socialmedia-instance \
+            --set-env-vars DATABASE_HOST=/cloudsql/pure-highlander-471707-t2:asia-east1:socialmedia-instance,DATABASE_USER=postgres,DATABASE_PASSWORD=654321Aa!,DATABASE_NAME=socialmedia
 
-      - name: Push Docker image
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    needs: deploy-backend
+    steps:
+      - name: Checkout frontend code
+        uses: actions/checkout@v3
+        with:
+          path: frontend
+
+      - name: Authenticate to GCP via Workload Identity
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: "projects/212643517584/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider"
+          service_account: "github-actions-deploy@pure-highlander-471707-t2.iam.gserviceaccount.com"
+
+      - name: Build & Push Frontend Docker image
         run: |
-          docker push gcr.io/pure-highlander-471707-t2/socialmedia-frontend
+          cd frontend
+          gcloud builds submit --tag gcr.io/pure-highlander-471707-t2/socialmedia-frontend
 
-      - name: Deploy to Cloud Run
+      - name: Deploy Frontend to Cloud Run
         run: |
           gcloud run deploy socialmedia-frontend \
             --image gcr.io/pure-highlander-471707-t2/socialmedia-frontend \
