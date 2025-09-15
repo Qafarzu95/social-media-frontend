@@ -3,7 +3,7 @@ name: Deploy Frontend to GKE
 on:
   push:
     branches:
-      - main
+      - dev   # sadece dev branch tetiklenecek
   workflow_dispatch:
 
 permissions:
@@ -17,6 +17,8 @@ jobs:
       # 1️⃣ Checkout frontend code
       - name: Checkout frontend code
         uses: actions/checkout@v3
+        with:
+          path: frontend
 
       # 2️⃣ Authenticate to GCP
       - name: Authenticate to GCP
@@ -32,24 +34,30 @@ jobs:
           project_id: ${{ secrets.GCP_PROJECT }}
           install_components: kubectl
 
-      # 4️⃣ Docker image build & push
+      # 4️⃣ GKE Auth Plugin
+      - name: Install GKE Auth Plugin
+        run: |
+          gcloud components install gke-gcloud-auth-plugin
+
+      # 5️⃣ Docker image build & push
       - name: Build & Push Frontend Docker
         run: |
+          cd frontend
           IMAGE_TAG=gcr.io/${{ secrets.GCP_PROJECT }}/socialmedia-frontend:${GITHUB_SHA}
           echo "Building Docker image with tag $IMAGE_TAG"
           gcloud builds submit --tag $IMAGE_TAG
 
-      # 5️⃣ GKE credentials al
+      # 6️⃣ GKE credentials al
       - name: Get GKE credentials
         run: |
           gcloud container clusters get-credentials socialmedia-cluster --zone asia-east1-a
 
-      # 6️⃣ Deploy Frontend & Ingress
+      # 7️⃣ Deploy Frontend & Ingress
       - name: Deploy Frontend & Ingress
         run: |
           IMAGE_TAG=gcr.io/${{ secrets.GCP_PROJECT }}/socialmedia-frontend:${GITHUB_SHA}
-          kubectl apply -f k8s/frontend-deployment.yaml
-          kubectl apply -f k8s/ingress.yaml
+          kubectl apply -f frontend/k8s/frontend-deployment.yaml
+          kubectl apply -f frontend/k8s/ingress.yaml
           # Commit-SHA tag ile image güncelle
           kubectl set image deployment/socialmedia-frontend-x frontend=$IMAGE_TAG
           # 60 saniye rollout kontrol, başarısızsa rollback
