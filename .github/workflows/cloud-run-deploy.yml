@@ -56,10 +56,10 @@ jobs:
       - name: Deploy Frontend & Ingress
         run: |
           IMAGE_TAG=gcr.io/${{ secrets.GCP_PROJECT }}/socialmedia-frontend:${GITHUB_SHA}
+          # Deployment & Service apply
           kubectl apply -f frontend/k8s/frontend-deployment.yaml
-          kubectl apply -f frontend/k8s/ingress.yaml
           # Commit-SHA tag ile image güncelle
-          kubectl set image deployment/socialmedia-frontend-x frontend=$IMAGE_TAG
+          kubectl set image deployment/socialmedia-frontend frontend=$IMAGE_TAG
           # 60 saniye rollout kontrol, başarısızsa rollback
-          kubectl rollout status deployment/socialmedia-frontend-x --timeout=60s || \
-          kubectl rollout undo deployment/socialmedia-frontend-x
+          kubectl rollout status deployment/socialmedia-frontend --timeout=60s || \
+          kubectl rollout undo deployment/socialmedia-frontend
