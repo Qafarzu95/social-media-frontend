@@ -1,4 +1,4 @@
-name: Deploy Frontend to GKE
+name: Deploy Backend to GKE
 
 on:
   push:
@@ -11,18 +11,18 @@ permissions:
   contents: read
 
 jobs:
-  deploy-frontend:
+  deploy-backend:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout frontend code
+      - name: Checkout backend code
         uses: actions/checkout@v3
         with:
-          path: frontend
+          path: backend
 
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v1
         with:
-          workload_identity_provider: projects/212643517584/locations/global/workloadIdentityPools/github-actions-pool-v2/providers/github-frontend-provider
+          workload_identity_provider: projects/212643517584/locations/global/workloadIdentityPools/github-actions-pool-v2/providers/github-backend-provider
           service_account: ${{ secrets.GCP_SA_EMAIL }}
 
       - name: Set up gcloud & kubectl
@@ -31,16 +31,15 @@ jobs:
           project_id: ${{ secrets.GCP_PROJECT }}
           install_kubectl: true
 
-      - name: Build & Push Frontend Docker
+      - name: Build & Push Backend Docker
         run: |
-          cd frontend
-          gcloud builds submit --tag gcr.io/${{ secrets.GCP_PROJECT }}/socialmedia-frontend
+          cd backend
+          gcloud builds submit --tag gcr.io/${{ secrets.GCP_PROJECT }}/socialmedia-backend
 
       - name: Get GKE credentials
         run: |
           gcloud container clusters get-credentials socialmedia-cluster --zone asia-east1-a
 
-      - name: Deploy Frontend & Ingress
+      - name: Deploy Backend
         run: |
-          kubectl apply -f k8s/frontend-deployment.yaml
-          kubectl apply -f k8s/ingress.yaml
+          kubectl apply -f k8s/backend-deployment.yaml
