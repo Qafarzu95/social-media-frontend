@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: gcr.io/YOUR_PROJECT_ID/socialmedia-frontend:latest
+        image: gcr.io/pure-highlander-471707-t2/socialmedia-frontend:latest
         ports:
         - containerPort: 8080
         env:
