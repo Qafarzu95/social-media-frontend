@@ -30,6 +30,11 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT }}
           install_kubectl: true
+          export_default_credentials: true  # bu eklendi
+
+      - name: Install GKE Auth Plugin
+        run: |
+          gcloud components install gke-gcloud-auth-plugin
 
       - name: Build & Push Frontend Docker
         run: |
@@ -43,4 +48,4 @@ jobs:
       - name: Deploy Frontend & Ingress
         run: |
           kubectl apply -f frontend/kubernetes/frontend-deployment.yaml
-          kubectl apply -f kubernetes/ingress.yaml
+          kubectl apply -f frontend/kubernetes/ingress.yaml
