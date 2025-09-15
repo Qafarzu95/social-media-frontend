@@ -1,4 +1,4 @@
-name: Deploy Frontend to Cloud Run
+name: Deploy Frontend to GKE
 
 on:
   push:
@@ -19,23 +19,28 @@ jobs:
         with:
           path: frontend
 
-      - name: Authenticate to GCP via Workload Identity
+      - name: Authenticate to GCP
         uses: google-github-actions/auth@v1
         with:
-          # Mevcut pool ve provider ile değiştirildi
           workload_identity_provider: projects/212643517584/locations/global/workloadIdentityPools/github-actions-pool-v2/providers/github-frontend-provider
           service_account: ${{ secrets.GCP_SA_EMAIL }}
 
-      - name: Build & Push Frontend Docker image
+      - name: Set up gcloud & kubectl
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT }}
+          install_kubectl: true
+
+      - name: Build & Push Frontend Docker
         run: |
           cd frontend
           gcloud builds submit --tag gcr.io/${{ secrets.GCP_PROJECT }}/socialmedia-frontend
 
-      - name: Deploy Frontend to Cloud Run
+      - name: Get GKE credentials
         run: |
-          gcloud run deploy socialmedia-frontend \
-            --image gcr.io/${{ secrets.GCP_PROJECT }}/socialmedia-frontend \
-            --platform managed \
-            --region asia-east1 \
-            --allow-unauthenticated \
-            --set-env-vars REACT_APP_API_URL=https://socialmedia-backend-${{ secrets.GCP_PROJECT }}.asia-east1.run.app
+          gcloud container clusters get-credentials socialmedia-cluster --zone asia-east1-a
+
+      - name: Deploy Frontend & Ingress
+        run: |
+          kubectl apply -f k8s/frontend-deployment.yaml
+          kubectl apply -f k8s/ingress.yaml
