@@ -3,7 +3,7 @@ name: Deploy Frontend to GKE
 on:
   push:
     branches:
-      - main
+      - dev
   workflow_dispatch:
 
 permissions:
@@ -30,7 +30,7 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT }}
           install_kubectl: true
-          export_default_credentials: true  # bu eklendi
+          export_default_credentials: true
 
       - name: Install GKE Auth Plugin
         run: |
