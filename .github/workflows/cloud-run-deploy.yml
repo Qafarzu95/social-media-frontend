@@ -1,4 +1,4 @@
-name: Deploy Frontend to GKE
+name: Deploy Backend to GKE
 
 on:
   push:
@@ -11,41 +11,47 @@ permissions:
   contents: read
 
 jobs:
-  deploy-frontend:
+  deploy-backend:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout frontend code
+      # Checkout backend code
+      - name: Checkout backend code
         uses: actions/checkout@v3
         with:
-          path: frontend
+          path: backend
 
+      # Authenticate to GCP
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v1
         with:
-          workload_identity_provider: projects/212643517584/locations/global/workloadIdentityPools/github-actions-pool-v2/providers/github-frontend-provider
+          workload_identity_provider: projects/212643517584/locations/global/workloadIdentityPools/github-actions-pool-v2/providers/github-backend-provider
           service_account: ${{ secrets.GCP_SA_EMAIL }}
 
+      # gcloud & kubectl kurulumu
       - name: Set up gcloud & kubectl
         uses: google-github-actions/setup-gcloud@v2
         with:
-          project_id: ${{ secrets.GCP_PROJECT }}
+          project_id: pure-highlander-471707-t2
           install_kubectl: true
-          export_default_credentials: true  # bu eklendi
+          export_default_credentials: true
 
+      # GKE Auth Plugin kurulumu
       - name: Install GKE Auth Plugin
         run: |
           gcloud components install gke-gcloud-auth-plugin
 
-      - name: Build & Push Frontend Docker
+      # Docker image build ve push
+      - name: Build & Push Backend Docker
         run: |
-          cd frontend
-          gcloud builds submit --tag gcr.io/${{ secrets.GCP_PROJECT }}/socialmedia-frontend
+          cd backend
+          gcloud builds submit --tag gcr.io/pure-highlander-471707-t2/socialmedia-backend
 
+      # GKE credentials al
       - name: Get GKE credentials
         run: |
           gcloud container clusters get-credentials socialmedia-cluster --zone asia-east1-a
 
-      - name: Deploy Frontend & Ingress
+      # Deploy Backend
+      - name: Deploy Backend
         run: |
-          kubectl apply -f frontend/kubernetes/frontend-deployment.yaml
-          kubectl apply -f frontend/kubernetes/ingress.yaml
+          kubectl apply -f backend/kubernetes/backend-deployment.yaml
