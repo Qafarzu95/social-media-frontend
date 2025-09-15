@@ -52,14 +52,13 @@ jobs:
         run: |
           gcloud container clusters get-credentials socialmedia-cluster --zone asia-east1-a
 
-      # 7️⃣ Deploy Frontend & Ingress
-      - name: Deploy Frontend & Ingress
+      # 7️⃣ Deploy Frontend
+      - name: Deploy Frontend
         run: |
           IMAGE_TAG=gcr.io/${{ secrets.GCP_PROJECT }}/socialmedia-frontend:${GITHUB_SHA}
           # Deployment & Service apply
           kubectl apply -f frontend/k8s/frontend-deployment.yaml
           # Commit-SHA tag ile image güncelle
           kubectl set image deployment/socialmedia-frontend frontend=$IMAGE_TAG
-          # 60 saniye rollout kontrol, başarısızsa rollback
-          kubectl rollout status deployment/socialmedia-frontend --timeout=60s || \
-          kubectl rollout undo deployment/socialmedia-frontend
+          # 180 saniye rollout kontrol, rollback yok
+          kubectl rollout status deployment/socialmedia-frontend --timeout=180s
