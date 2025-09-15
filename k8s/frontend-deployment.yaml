@@ -1,38 +1,49 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: socialmedia-frontend
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: socialmedia-frontend
-  template:
-    metadata:
-      labels:
-        app: socialmedia-frontend
-    spec:
-      containers:
-      - name: frontend
-        image: gcr.io/pure-highlander-471707-t2/socialmedia-frontend:latest
-        ports:
-        - containerPort: 8080
-        env:
-        - name: REACT_APP_API_URL
-          value: "http://socialmedia-backend-service:8080"
-        - name: PORT
-          value: "8080"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: socialmedia-frontend-service
-spec:
-  type: ClusterIP
-  selector:
-    app: socialmedia-frontend
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 8080
-      
+name: Deploy Frontend to GKE
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout frontend code direkt root'a alındı
+      - name: Checkout frontend code
+        uses: actions/checkout@v3
+
+      # GCP authentication
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: projects/212643517584/locations/global/workloadIdentityPools/github-actions-pool-v2/providers/github-frontend-provider
+          service_account: ${{ secrets.GCP_SA_EMAIL }}
+
+      # gcloud ve kubectl kurulumu
+      - name: Set up gcloud & kubectl
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT }}
+          install_kubectl: true
+
+      # Docker image build ve push
+      - name: Build & Push Frontend Docker
+        run: |
+          gcloud builds submit --tag gcr.io/${{ secrets.GCP_PROJECT }}/socialmedia-frontend
+
+      # GKE credentials al
+      - name: Get GKE credentials
+        run: |
+          gcloud container clusters get-credentials socialmedia-cluster --zone asia-east1-a
+
+      # Deploy Frontend & Ingress
+      - name: Deploy Frontend & Ingress
+        run: |
+          kubectl apply -f k8s/frontend-deployment.yaml
+          kubectl apply -f k8s/ingress.yaml
