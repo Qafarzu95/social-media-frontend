@@ -16,8 +16,6 @@ jobs:
     steps:
       - name: Checkout frontend code
         uses: actions/checkout@v3
-        with:
-          path: frontend
 
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v1
@@ -33,7 +31,6 @@ jobs:
 
       - name: Build & Push Frontend Docker
         run: |
-          cd frontend
           gcloud builds submit --tag gcr.io/${{ secrets.GCP_PROJECT }}/socialmedia-frontend
 
       - name: Get GKE credentials
@@ -42,5 +39,5 @@ jobs:
 
       - name: Deploy Frontend & Ingress
         run: |
-          kubectl apply -f kubernetes/frontend-deployment.yaml
-          kubectl apply -f kubernetes/ingress.yaml
+          kubectl apply -f k8s/frontend-deployment.yaml
+          kubectl apply -f k8s/ingress.yaml
